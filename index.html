@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>TheList</title>
+  <meta name="description" content="Simple lists with titles and comments.">
+  <meta name="theme-color" content="#f7f8fb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1d22" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="TheList">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <button id="prev-btn" class="icon-btn nav-btn" aria-label="Previous list">&#8249;</button>
+    <div class="header-center">
+      <button id="list-title" class="list-title" aria-label="Rename list"></button>
+      <div id="dots" class="dots" role="tablist" aria-label="Lists"></div>
+    </div>
+    <button id="next-btn" class="icon-btn nav-btn" aria-label="Next list">&#8250;</button>
+    <button id="menu-btn" class="icon-btn" aria-label="List options">&#8942;</button>
+  </header>
+
+  <main id="pages" class="pages" tabindex="0"></main>
+
+  <form id="add-form" class="add-form" autocomplete="off">
+    <div class="add-fields">
+      <input id="add-title" name="title" type="text" placeholder="Add an item…" required aria-label="Item title">
+      <input id="add-comment" name="comment" type="text" placeholder="Comment (optional)" aria-label="Item comment">
+    </div>
+    <button type="submit" class="primary-btn add-btn" aria-label="Add item">+</button>
+  </form>
+
+  <div id="select-scrim" class="select-scrim" hidden>
+    <p class="select-hint">Swipe the item to delete it · tap anywhere to cancel</p>
+  </div>
+
+  <template id="list-page-tpl">
+    <section class="page list-page">
+      <ul class="items"></ul>
+      <p class="empty">No items yet. Add one below.</p>
+    </section>
+  </template>
+
+  <template id="new-list-tpl">
+    <section class="page new-list-page">
+      <div class="new-list-hint">
+        <h2>New list</h2>
+        <p>Name it below to create it.</p>
+      </div>
+    </section>
+  </template>
+
+  <dialog id="list-dialog">
+    <form method="dialog" class="dialog-form">
+      <h2>List options</h2>
+      <label>Name
+        <input name="name" type="text" required>
+      </label>
+      <label class="toggle">
+        <input name="showAge" type="checkbox">
+        <span>Show when items were added</span>
+      </label>
+      <label class="toggle">
+        <input name="fadeOld" type="checkbox">
+        <span>Fade older items</span>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" data-action="delete" class="danger-btn">Delete list</button>
+        <span class="spacer"></span>
+        <button type="button" data-action="cancel">Cancel</button>
+        <button value="save" class="primary-btn">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>

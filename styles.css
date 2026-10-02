@@ -1,0 +1,381 @@
+/* Pastel palette: every colour derives from --hue (set per list by app.js).
+   Tokens are declared on .page too so each page resolves its own list's hue. */
+:root, .page {
+  --hue: 235;
+  --bg: oklch(94% 0.04 var(--hue));
+  --surface: oklch(98.5% 0.012 var(--hue));
+  --text: oklch(30% 0.03 var(--hue));
+  --muted: oklch(50% 0.035 var(--hue));
+  --border: oklch(88% 0.035 var(--hue));
+  --accent: oklch(82% 0.085 var(--hue));        /* pastel fill: buttons */
+  --accent-text: oklch(30% 0.05 var(--hue));
+  --accent-strong: oklch(62% 0.09 var(--hue));  /* active dot, focus ring */
+  --danger: oklch(55% 0.13 25);
+  --dot: oklch(86% 0.04 var(--hue));
+  --radius: 12px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root, .page {
+    --bg: oklch(22% 0.025 var(--hue));
+    --surface: oklch(27% 0.03 var(--hue));
+    --text: oklch(95% 0.015 var(--hue));
+    --muted: oklch(75% 0.03 var(--hue));
+    --border: oklch(34% 0.03 var(--hue));
+    --accent: oklch(84% 0.08 var(--hue));
+    --accent-text: oklch(25% 0.04 var(--hue));
+    --accent-strong: oklch(84% 0.08 var(--hue));
+    --danger: oklch(72% 0.11 25);
+    --dot: oklch(42% 0.03 var(--hue));
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, input, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button { cursor: pointer; }
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: calc(env(safe-area-inset-top) + 8px) 8px 8px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.header-center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.list-title {
+  max-width: 100%;
+  border: 0;
+  background: none;
+  padding: 2px 8px;
+  font-size: 1.15rem;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 8px;
+}
+.list-title:disabled { cursor: default; }
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+}
+.icon-btn:hover:not(:disabled) { background: var(--bg); }
+.icon-btn:disabled { visibility: hidden; }
+
+.dots {
+  display: flex;
+  gap: 6px;
+  min-height: 8px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--dot);
+}
+.dot.active { background: var(--accent-strong); }
+.dot.plus {
+  width: auto;
+  height: 8px;
+  background: none;
+  color: var(--dot);
+  font-size: 12px;
+  line-height: 8px;
+  font-weight: 700;
+}
+.dot.plus.active { color: var(--accent-strong); }
+
+/* Swipeable pages */
+.pages {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  outline: none;
+}
+.pages::-webkit-scrollbar { display: none; }
+
+.page {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  padding: 12px 16px 24px;
+  background: var(--bg);
+}
+
+/* Minimum gap between the latest item and the add form when scrolled to the bottom;
+   app.js (fitBottomGap) may enlarge it so the topmost visible item is partly cut off */
+.list-page { padding-bottom: 200px; }
+
+.items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "title age" "comment comment";
+  column-gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  /* Fade older items: --age is whole months old (set from 1 month); 3% per month, floor of 25% (~2 years) */
+  opacity: max(0.25, 1 - var(--age, 0) * 0.03);
+}
+.item.pressing { transform: scale(0.98); }
+/* Selected (after press and hold): lifted above the scrim, ready to swipe away */
+.item.selected {
+  position: relative;
+  z-index: 3;
+  touch-action: none;
+  cursor: grab;
+  box-shadow: 0 8px 24px oklch(30% 0.05 var(--hue) / 0.18);
+  /* Blend towards the danger colour as the swipe nears the delete threshold (--swipe: 0..1) */
+  border-color: color-mix(in oklch, var(--accent-strong), var(--danger) calc(var(--swipe, 0) * 100%));
+  opacity: calc(1 - var(--swipe, 0) * 0.4);
+}
+.item.swiping { transition: none; cursor: grabbing; }
+.item.removing { transition: transform 0.2s ease-in, opacity 0.2s; opacity: 0; }
+
+.select-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 16px calc(env(safe-area-inset-bottom) + 96px);
+  background: oklch(25% 0.03 var(--hue) / 0.25);
+}
+.select-scrim[hidden] { display: none; }
+.select-hint {
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.item-title {
+  grid-area: title;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.item-age {
+  grid-area: age;
+  padding-top: 0.15em; /* sit on the title's first line */
+  color: var(--muted);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+.item-comment {
+  grid-area: comment;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.empty {
+  margin: 48px 0;
+  text-align: center;
+  color: var(--muted);
+}
+.items:not(:empty) + .empty { display: none; }
+
+/* New list page */
+.new-list-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.new-list-hint {
+  text-align: center;
+  color: var(--muted);
+}
+.new-list-hint h2 { margin: 0 0 4px; font-size: 1.1rem; color: var(--text); }
+.new-list-hint p { margin: 0; }
+
+input[type="text"], textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+}
+input[type="text"]:focus, textarea:focus { border-color: var(--accent-strong); }
+textarea { resize: vertical; }
+
+.primary-btn, .danger-btn, :where(.dialog-actions button) {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-weight: 600;
+}
+.primary-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.danger-btn {
+  color: var(--danger);
+  border-color: transparent;
+  background: none;
+  padding-left: 4px;
+}
+
+/* Add form */
+.add-form {
+  position: relative;
+  display: flex;
+  align-items: flex-start; /* keep the button beside the title field when the comment field opens */
+  gap: 8px;
+  padding: 10px 12px calc(env(safe-area-inset-bottom) + 10px);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.add-fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#add-title { height: 44px; } /* matches .add-btn */
+#add-comment { display: none; font-size: 0.9rem; }
+.add-form.expanded #add-comment { display: block; }
+/* Naming a new list has no comment; keep its space so the bar's height doesn't change */
+.add-form.new-list-mode #add-comment { visibility: hidden; }
+
+.add-btn {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.5rem;
+}
+
+/* Dialogs */
+dialog {
+  width: min(420px, calc(100% - 32px));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+}
+dialog::backdrop { background: rgb(0 0 0 / 0.4); }
+
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+.dialog-form h2 { margin: 0; font-size: 1.1rem; }
+.dialog-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.dialog-form label > * { color: var(--text); font-size: 1rem; }
+.dialog-form label.toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.toggle input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent-strong);
+}
+
+.dialog-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.spacer { flex: 1; }
+.danger-btn:disabled { visibility: hidden; }
+
+@media (hover: none) {
+  .nav-btn { visibility: hidden; }
+}
+
+/* Balance the header: prev on the left mirrors next + menu on the right */
+#prev-btn { margin-right: 40px; }
