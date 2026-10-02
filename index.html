@@ -36,9 +36,13 @@
     <button type="submit" class="primary-btn add-btn" aria-label="Add item">+</button>
   </form>
 
-  <div id="select-scrim" class="select-scrim" hidden>
+  <div id="select-scrim" class="select-scrim">
     <p class="select-hint">Swipe the item to delete it · tap anywhere to cancel</p>
   </div>
+
+  <template id="item-tpl">
+    <li class="item"><span class="item-title"></span><time class="item-age"></time><span class="item-comment"></span></li>
+  </template>
 
   <template id="list-page-tpl">
     <section class="page list-page">

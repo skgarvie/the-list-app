@@ -16,6 +16,9 @@ const els = {
   listDialog: $('#list-dialog'),
   listPageTpl: $('#list-page-tpl'),
   newListTpl: $('#new-list-tpl'),
+  itemTpl: $('#item-tpl'),
+  themeLight: $('meta[name="theme-color"][media*="light"]'),
+  themeDark: $('meta[name="theme-color"][media*="dark"]'),
 };
 
 const uid = () =>
@@ -26,20 +29,25 @@ const HUES = [235, 150, 15, 85, 295, 195, 50, 340];
 
 // ---- State ----
 
-let state = load();
+let { state, dirty } = load();
 let current = 0; // index of page in view; === state.lists.length means the "new list" page
 
+// dirty: the loaded data was changed (or created) and should be saved
 function load() {
   try {
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (data && Array.isArray(data.lists) && data.lists.length) {
+      let dirty = false;
       data.lists.forEach((list, i) => {
-        if (typeof list.hue !== 'number') list.hue = HUES[i % HUES.length];
+        if (typeof list.hue !== 'number') {
+          list.hue = HUES[i % HUES.length];
+          dirty = true;
+        }
       });
-      return data;
+      return { state: data, dirty };
     }
   } catch {}
-  return { lists: [{ id: uid(), name: 'My List', hue: HUES[0], items: sampleItems() }] };
+  return { state: { lists: [{ id: uid(), name: 'My List', hue: HUES[0], items: sampleItems() }] }, dirty: true };
 }
 
 // TEST DATA: 30 items spread from 2 years ago to today, to preview age fading.
@@ -78,45 +86,33 @@ const currentList = () => state.lists[current];
 
 // ---- Rendering ----
 
+// Age label and fade are always filled in; the page's show-age / fade-old classes decide if they show
+function itemEl(item) {
+  const li = els.itemTpl.content.firstElementChild.cloneNode(true);
+  li.dataset.id = item.id;
+  $('.item-title', li).textContent = item.title;
+  $('.item-comment', li).textContent = item.comment;
+  const added = $('.item-age', li);
+  if (item.createdAt) {
+    const months = ageInMonths(item.createdAt);
+    if (months >= 1) li.style.setProperty('--age', months);
+    added.dateTime = new Date(item.createdAt).toISOString();
+    added.title = `Added ${new Date(item.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}`;
+    added.textContent = timeAgo(item.createdAt);
+  } else {
+    added.remove();
+  }
+  return li;
+}
+
 function renderItems(listIndex) {
-  const page = els.pages.children[listIndex];
-  const ul = $('.items', page);
-  const list = state.lists[listIndex];
-  ul.replaceChildren(
-    ...list.items.map((item) => {
-      const li = document.createElement('li');
-      li.className = 'item';
-      li.dataset.id = item.id;
-      if (list.fadeOld) {
-        const months = ageInMonths(item.createdAt);
-        if (months >= 1) li.style.setProperty('--age', months);
-      }
+  const ul = $('.items', els.pages.children[listIndex]);
+  ul.replaceChildren(...state.lists[listIndex].items.map(itemEl));
+}
 
-      const title = document.createElement('span');
-      title.className = 'item-title';
-      title.textContent = item.title;
-      li.append(title);
-
-      if (list.showAge && item.createdAt) {
-        const added = document.createElement('time');
-        added.className = 'item-age';
-        added.dateTime = new Date(item.createdAt).toISOString();
-        added.title = `Added ${new Date(item.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}`;
-        added.textContent = timeAgo(item.createdAt);
-        li.append(added);
-      }
-
-      if (item.comment) {
-        const comment = document.createElement('span');
-        comment.className = 'item-comment';
-        comment.textContent = item.comment;
-        li.append(comment);
-      }
-
-      return li;
-    })
-  );
-  fitBottomGap(page);
+function applyListSettings(page, list) {
+  page.classList.toggle('show-age', !!list.showAge);
+  page.classList.toggle('fade-old', !!list.fadeOld);
 }
 
 // Bottom gap below the latest item: at least MIN_GAP, plus whatever it takes for the topmost
@@ -168,6 +164,7 @@ function renderPages() {
     const page = els.listPageTpl.content.firstElementChild.cloneNode(true);
     page.dataset.id = list.id;
     setTone(page, list.hue);
+    applyListSettings(page, list);
     return page;
   });
   els.newListPage = els.newListTpl.content.firstElementChild.cloneNode(true);
@@ -198,16 +195,17 @@ function renderHeader() {
         if (i === total - 1) dot.textContent = '+';
         dot.setAttribute('role', 'tab');
         dot.setAttribute('aria-label', i === total - 1 ? 'New list' : state.lists[i].name);
-        dot.addEventListener('click', () => scrollToPage(i));
         return dot;
       })
     );
   }
-  [...els.dots.children].forEach((dot, i) => {
-    dot.classList.toggle('active', i === current);
-    dot.setAttribute('aria-selected', i === current);
-  });
+  [...els.dots.children].forEach((dot, i) => dot.setAttribute('aria-selected', i === current));
 }
+
+els.dots.addEventListener('click', (e) => {
+  const i = [...els.dots.children].indexOf(e.target);
+  if (i >= 0) scrollToPage(i);
+});
 
 function setTone(el, hue) {
   el.style.setProperty('--hue', hue);
@@ -217,8 +215,8 @@ function applyHue(hue) {
   setTone(document.documentElement, hue);
   if (els.newListPage) setTone(els.newListPage, hue);
   // Match the header's --surface in each scheme
-  document.querySelector('meta[name="theme-color"][media*="light"]').content = `oklch(98.5% 0.012 ${hue})`;
-  document.querySelector('meta[name="theme-color"][media*="dark"]').content = `oklch(27% 0.03 ${hue})`;
+  els.themeLight.content = `oklch(98.5% 0.012 ${hue})`;
+  els.themeDark.content = `oklch(27% 0.03 ${hue})`;
 }
 
 // Show the latest item: lists open scrolled to the bottom
@@ -272,10 +270,17 @@ els.pages.addEventListener(
 );
 
 // Keep the current page aligned when the viewport resizes (rotation, etc.)
+// Resize fires in bursts (e.g. while the on-screen keyboard animates); handle once per frame
+let resizeQueued = false;
 window.addEventListener('resize', () => {
-  els.pages.scrollTo({ left: current * els.pages.clientWidth, behavior: 'instant' });
-  // Viewport height changed (rotation, on-screen keyboard), so the cut-off point moves
-  [...els.pages.querySelectorAll('.list-page')].forEach(fitBottomGap);
+  if (resizeQueued) return;
+  resizeQueued = true;
+  requestAnimationFrame(() => {
+    resizeQueued = false;
+    els.pages.scrollTo({ left: current * els.pages.clientWidth, behavior: 'instant' });
+    // Viewport height changed (rotation, on-screen keyboard), so the cut-off point moves
+    els.pages.querySelectorAll('.list-page').forEach(fitBottomGap);
+  });
 });
 
 els.prev.addEventListener('click', () => scrollToPage(current - 1));
@@ -301,7 +306,6 @@ function setFormMode(onNew) {
   els.addForm.classList.toggle('new-list-mode', onNew);
   els.addTitle.placeholder = onNew ? 'New list name…' : 'Add an item…';
   els.addTitle.setAttribute('aria-label', onNew ? 'New list name' : 'Item title');
-  els.addComment.tabIndex = onNew ? -1 : 0;
   $('.add-btn', els.addForm).setAttribute('aria-label', onNew ? 'Create list' : 'Add item');
 }
 
@@ -320,34 +324,22 @@ els.addForm.addEventListener('submit', (e) => {
   if (!title) return;
   if (isNewListPage()) return createList(title);
   const comment = els.addComment.value.trim();
-  const list = currentList();
-  list.items.push({ id: uid(), title, comment, createdAt: Date.now() });
+  const item = { id: uid(), title, comment, createdAt: Date.now() };
+  currentList().items.push(item);
   save();
-  renderItems(current);
+  const page = els.pages.children[current];
+  $('.items', page).append(itemEl(item));
   els.addTitle.value = '';
   els.addComment.value = '';
   els.addTitle.focus();
-  const page = els.pages.children[current];
+  fitBottomGap(page);
   page.scrollTo({ top: page.scrollHeight, behavior: 'smooth' });
 });
 
-// Reveal the comment field while the form is in use
-// (Not when naming a new list: there's no comment field to show)
-els.addForm.addEventListener('focusin', () => !newListMode && els.addForm.classList.add('expanded'));
-// Unfocus the bar and collapse the comment field (unless a comment has been typed)
+// Unfocus the bar; CSS collapses the comment field once the bar is unfocused and empty
 function dismissForm() {
-  if (!els.addForm.contains(document.activeElement)) return;
-  document.activeElement.blur();
-  if (!els.addComment.value) els.addForm.classList.remove('expanded');
+  if (els.addForm.contains(document.activeElement)) document.activeElement.blur();
 }
-
-els.addForm.addEventListener('focusout', () => {
-  setTimeout(() => {
-    if (!els.addForm.contains(document.activeElement) && !els.addTitle.value && !els.addComment.value) {
-      els.addForm.classList.remove('expanded');
-    }
-  });
-});
 
 // ---- Delete item (press and hold to select, then swipe it away) ----
 
@@ -362,7 +354,12 @@ let swipe = null; // active swipe on the selected item: { pointerId, startX, las
 
 els.pages.addEventListener('pointerdown', (e) => {
   const li = e.target.closest('.item');
-  if (!li || selected || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  // Second chance: after lifting the finger, press the selected item again to swipe it
+  if (selected) {
+    if (!swipe && li === selected.li) startSwipe(e.pointerId, e.clientX);
+    return;
+  }
+  if (!li || (e.pointerType === 'mouse' && e.button !== 0)) return;
   hold = {
     li,
     pointerId: e.pointerId,
@@ -388,7 +385,6 @@ function cancelHold() {
 function select(li) {
   selected = { li, listIndex: [...els.pages.children].indexOf(li.closest('.page')) };
   li.classList.add('selected');
-  els.selectScrim.hidden = false;
   navigator.vibrate?.(10);
 }
 
@@ -398,7 +394,6 @@ function deselect() {
   li.classList.remove('selected', 'swiping');
   li.style.transform = '';
   li.style.removeProperty('--swipe');
-  els.selectScrim.hidden = true;
   selected = null;
   swipe = null;
 }
@@ -406,11 +401,6 @@ function deselect() {
 function startSwipe(pointerId, x) {
   swipe = { pointerId, startX: x, lastX: x, lastT: performance.now(), speed: 0 };
 }
-
-// Second chance: after lifting the finger, press the selected item again to swipe it
-els.pages.addEventListener('pointerdown', (e) => {
-  if (selected && !swipe && e.target.closest('.item') === selected.li) startSwipe(e.pointerId, e.clientX);
-});
 
 // Tapping anywhere outside the selected item cancels
 els.selectScrim.addEventListener('pointerdown', (e) => {
@@ -458,7 +448,9 @@ function endSwipe(e) {
       list.items = list.items.filter((it) => it.id !== li.dataset.id);
       save();
       deselect();
-      renderItems(listIndex);
+      const page = li.closest('.page');
+      li.remove();
+      fitBottomGap(page);
     }, 200);
   } else {
     // Not far enough: spring back and stay selected
@@ -490,15 +482,16 @@ $('form', els.listDialog).addEventListener('submit', (e) => {
   if (isNewListPage()) return;
   const name = e.target.name.value.trim();
   if (!name) return;
-  Object.assign(currentList(), {
+  const list = currentList();
+  Object.assign(list, {
     name,
     showAge: e.target.showAge.checked,
     fadeOld: e.target.fadeOld.checked,
   });
   save();
-  els.dots.replaceChildren(); // force aria labels to refresh
+  els.dots.children[current].setAttribute('aria-label', name);
   renderHeader();
-  renderItems(current);
+  applyListSettings(els.pages.children[current], list);
 });
 
 els.listDialog.addEventListener('click', (e) => {
@@ -519,5 +512,5 @@ els.listDialog.addEventListener('click', (e) => {
 
 // ---- Boot ----
 
-save(); // persist any hues assigned to lists saved before colours existed
+if (dirty) save(); // persist first-run data, or hues assigned to lists saved before colours existed
 render();

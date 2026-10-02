@@ -118,7 +118,7 @@ button { cursor: pointer; }
   border-radius: 50%;
   background: var(--dot);
 }
-.dot.active { background: var(--accent-strong); }
+.dot[aria-selected="true"] { background: var(--accent-strong); }
 .dot.plus {
   width: auto;
   height: 8px;
@@ -128,7 +128,7 @@ button { cursor: pointer; }
   line-height: 8px;
   font-weight: 700;
 }
-.dot.plus.active { color: var(--accent-strong); }
+.dot.plus[aria-selected="true"] { color: var(--accent-strong); }
 
 /* Swipeable pages */
 .pages {
@@ -181,9 +181,9 @@ button { cursor: pointer; }
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
-  /* Fade older items: --age is whole months old (set from 1 month); 3% per month, floor of 25% (~2 years) */
-  opacity: max(0.25, 1 - var(--age, 0) * 0.03);
 }
+/* Fade older items: --age is whole months old (set from 1 month); 3% per month, floor of 25% (~2 years) */
+.fade-old .item { opacity: max(0.25, 1 - var(--age, 0) * 0.03); }
 .item.pressing { transform: scale(0.98); }
 /* Selected (after press and hold): lifted above the scrim, ready to swipe away */
 .item.selected {
@@ -203,13 +203,13 @@ button { cursor: pointer; }
   position: fixed;
   inset: 0;
   z-index: 2;
-  display: flex;
+  display: none;
   align-items: flex-end;
   justify-content: center;
   padding: 0 16px calc(env(safe-area-inset-bottom) + 96px);
   background: oklch(25% 0.03 var(--hue) / 0.25);
 }
-.select-scrim[hidden] { display: none; }
+body:has(.item.selected) .select-scrim { display: flex; }
 .select-hint {
   margin: 0;
   padding: 8px 14px;
@@ -232,6 +232,7 @@ button { cursor: pointer; }
   font-size: 0.72rem;
   white-space: nowrap;
 }
+.page:not(.show-age) .item-age { display: none; }
 .item-comment {
   grid-area: comment;
   margin-top: 2px;
@@ -240,6 +241,7 @@ button { cursor: pointer; }
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.item-comment:empty { display: none; }
 
 .empty {
   margin: 48px 0;
@@ -312,9 +314,10 @@ textarea { resize: vertical; }
 }
 #add-title { height: 44px; } /* matches .add-btn */
 #add-comment { display: none; font-size: 0.9rem; }
-.add-form.expanded #add-comment { display: block; }
-/* Naming a new list has no comment; keep its space so the bar's height doesn't change */
-.add-form.new-list-mode #add-comment { visibility: hidden; }
+/* Reveal the comment field while the form is in use or has text in it */
+.add-form:not(.new-list-mode):is(:focus-within, :has(input:not(:placeholder-shown))) #add-comment { display: block; }
+/* Naming a new list has no comment; keep the space of a drafted one so the bar's height doesn't change */
+.add-form.new-list-mode:has(#add-comment:not(:placeholder-shown)) #add-comment { display: block; visibility: hidden; }
 
 .add-btn {
   width: 44px;
