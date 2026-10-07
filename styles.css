@@ -298,8 +298,10 @@ textarea { resize: vertical; }
   position: relative;
   display: flex;
   align-items: flex-start; /* keep the button beside the title field when the comment field opens */
-  gap: 8px;
-  padding: 10px 12px calc(env(safe-area-inset-bottom) + 10px);
+  gap: 10px;
+  /* Scales with viewport width (16px at iPhone 12 mini's 375px, up to 24px); clears side safe areas in landscape */
+  --add-pad-x: clamp(16px, 4.5vw, 24px);
+  padding: 14px max(var(--add-pad-x), env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 14px) max(var(--add-pad-x), env(safe-area-inset-left));
   background: var(--surface);
   border-top: 1px solid var(--border);
   transition: background-color 0.3s, border-color 0.3s;
