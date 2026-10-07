@@ -1,4 +1,4 @@
-const CACHE = 'thelist-v21';
+const CACHE = 'thelist-v23';
 const ASSETS = [
   './',
   'index.html',

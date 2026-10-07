@@ -14,6 +14,7 @@ const els = {
   addComment: $('#add-comment'),
   selectScrim: $('#select-scrim'),
   listDialog: $('#list-dialog'),
+  appVersion: $('#app-version'),
   listPageTpl: $('#list-page-tpl'),
   newListTpl: $('#new-list-tpl'),
   itemTpl: $('#item-tpl'),
@@ -473,6 +474,18 @@ function openListDialog() {
   $('[data-action="delete"]', els.listDialog).disabled = state.lists.length <= 1;
   els.listDialog.returnValue = '';
   els.listDialog.showModal();
+  showAppVersion();
+}
+
+// The service worker's cache name (CACHE in sw.js) doubles as the app version. Read it from
+// sw.js itself so it shows even where no service worker runs (e.g. plain http on a LAN IP).
+function showAppVersion() {
+  fetch('sw.js')
+    .then((res) => res.text())
+    .then((src) => {
+      els.appVersion.textContent = src.match(/const CACHE = '([^']+)'/)?.[1] ?? '';
+    })
+    .catch(() => {});
 }
 
 els.title.addEventListener('click', openListDialog);
