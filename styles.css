@@ -313,7 +313,11 @@ textarea { resize: vertical; }
   display: flex;
   flex-direction: column;
   gap: 6px;
+  /* Inset from the screen's rounded bottom corner while idle; widens to full width on focus */
+  margin-left: 20px;
+  transition: margin-left 0.2s ease;
 }
+.add-form:focus-within .add-fields { margin-left: 0; }
 #add-title { height: 44px; } /* matches .add-btn */
 #add-comment { display: none; font-size: 0.9rem; }
 /* Reveal the comment field while the form is in use or has text in it */
