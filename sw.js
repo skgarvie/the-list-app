@@ -1,9 +1,10 @@
-const CACHE = 'thelist-v23';
+const CACHE = 'thelist-v24';
 const ASSETS = [
   './',
   'index.html',
   'styles.css',
   'app.js',
+  'db.js',
   'manifest.webmanifest',
   'icons/icon.svg',
   'icons/icon-192.png',

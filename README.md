@@ -44,29 +44,24 @@ When you ship changes, bump the `CACHE` name in [sw.js](sw.js) (e.g. `thelist-v2
 | --- | --- |
 | [index.html](index.html) | App shell, templates, dialogs, service worker registration |
 | [styles.css](styles.css) | Layout, theming, scroll-snap paging |
-| [app.js](app.js) | State, persistence, rendering and interactions |
+| [app.js](app.js) | State, rendering and interactions |
+| [db.js](db.js) | IndexedDB persistence and migration from `localStorage` |
 | [sw.js](sw.js) | Cache-first service worker for offline use |
 | [manifest.webmanifest](manifest.webmanifest) | PWA install metadata |
 | [icons/](icons/) | App icons (SVG, 192/512 PNG, maskable) |
 
 ## Data
 
-Everything is stored in the browser's `localStorage` under the key `thelist:v1`:
+Everything is stored in the browser's IndexedDB, in a database called `thelist` with two object stores:
 
-```json
-{
-  "lists": [
-    {
-      "id": "…",
-      "name": "My List",
-      "hue": 235,
-      "showAge": false,
-      "fadeOld": false,
-      "items": [{ "id": "…", "title": "Milk", "comment": "2L", "createdAt": 1700000000000 }]
-    }
-  ]
-}
-```
+| Store | Key | Record |
+| --- | --- | --- |
+| `lists` | `id` | `{ "id": "…", "name": "My List", "hue": 235, "showAge": false, "fadeOld": false, "order": 0 }` |
+| `items` | `id` (indexed by `listId`) | `{ "id": "…", "listId": "…", "title": "Milk", "comment": "2L", "createdAt": 1700000000000 }` |
+
+Lists are shown in `order`; items within a list by `createdAt`. [db.js](db.js) loads everything into memory at startup and saves each change as it happens.
+
+Data saved by older versions in `localStorage` (key `thelist:v1`) is copied into IndexedDB the first time the new version opens, then removed.
 
 `hue` is an OKLCH hue angle picked from the palette in [app.js](app.js) (`HUES`); every colour in [styles.css](styles.css) is derived from it.
 

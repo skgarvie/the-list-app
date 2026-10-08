@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'thelist:v1';
+import { loadLists, putList, deleteList, putItem, putItems, deleteItem, requestPersistence } from './db.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -30,25 +30,27 @@ const HUES = [235, 150, 15, 85, 295, 195, 50, 340];
 
 // ---- State ----
 
-let { state, dirty } = load();
+const state = { lists: await load() };
 let current = 0; // index of page in view; === state.lists.length means the "new list" page
 
-// dirty: the loaded data was changed (or created) and should be saved
-function load() {
-  try {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (data && Array.isArray(data.lists) && data.lists.length) {
-      let dirty = false;
-      data.lists.forEach((list, i) => {
-        if (typeof list.hue !== 'number') {
-          list.hue = HUES[i % HUES.length];
-          dirty = true;
-        }
-      });
-      return { state: data, dirty };
+// Each list carries an `order` so the saved lists come back in the same sequence
+async function load() {
+  const lists = await loadLists();
+  if (!lists.length) {
+    // First run: save the starter list
+    const list = { id: uid(), name: 'My List', hue: HUES[0], order: 0, items: sampleItems() };
+    putList(list);
+    putItems(list.id, list.items);
+    return [list];
+  }
+  lists.forEach((list, i) => {
+    // Lists saved before colours existed
+    if (typeof list.hue !== 'number') {
+      list.hue = HUES[i % HUES.length];
+      putList(list);
     }
-  } catch {}
-  return { state: { lists: [{ id: uid(), name: 'My List', hue: HUES[0], items: sampleItems() }] }, dirty: true };
+  });
+  return lists;
 }
 
 // TEST DATA: 30 items spread from 2 years ago to today, to preview age fading.
@@ -74,12 +76,6 @@ function sampleItems() {
 function nextHue() {
   const used = new Set(state.lists.map((l) => l.hue));
   return HUES.find((h) => !used.has(h)) ?? HUES[state.lists.length % HUES.length];
-}
-
-function save() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {}
 }
 
 const isNewListPage = (i = current) => i >= state.lists.length;
@@ -311,8 +307,10 @@ function setFormMode(onNew) {
 }
 
 function createList(name) {
-  state.lists.push({ id: uid(), name, hue: nextHue(), items: [] });
-  save();
+  const order = (state.lists.at(-1)?.order ?? -1) + 1;
+  const list = { id: uid(), name, hue: nextHue(), order, items: [] };
+  state.lists.push(list);
+  putList(list);
   els.addTitle.value = '';
   current = state.lists.length - 1;
   render();
@@ -327,7 +325,7 @@ els.addForm.addEventListener('submit', (e) => {
   const comment = els.addComment.value.trim();
   const item = { id: uid(), title, comment, createdAt: Date.now() };
   currentList().items.push(item);
-  save();
+  putItem(currentList().id, item);
   const page = els.pages.children[current];
   $('.items', page).append(itemEl(item));
   els.addTitle.value = '';
@@ -447,7 +445,7 @@ function endSwipe(e) {
     setTimeout(() => {
       const list = state.lists[listIndex];
       list.items = list.items.filter((it) => it.id !== li.dataset.id);
-      save();
+      deleteItem(li.dataset.id);
       deselect();
       const page = li.closest('.page');
       li.remove();
@@ -501,7 +499,7 @@ $('form', els.listDialog).addEventListener('submit', (e) => {
     showAge: e.target.showAge.checked,
     fadeOld: e.target.fadeOld.checked,
   });
-  save();
+  putList(list);
   els.dots.children[current].setAttribute('aria-label', name);
   renderHeader();
   applyListSettings(els.pages.children[current], list);
@@ -514,8 +512,8 @@ els.listDialog.addEventListener('click', (e) => {
     const list = currentList();
     if (state.lists.length > 1 && confirm(`Delete "${list.name}" and all its items?`)) {
       state.lists.splice(current, 1);
+      deleteList(list.id);
       current = Math.min(current, state.lists.length - 1);
-      save();
       els.listDialog.close();
       render();
     }
@@ -525,5 +523,5 @@ els.listDialog.addEventListener('click', (e) => {
 
 // ---- Boot ----
 
-if (dirty) save(); // persist first-run data, or hues assigned to lists saved before colours existed
 render();
+requestPersistence();
