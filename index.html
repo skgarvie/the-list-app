@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>TheList</title>
   <meta name="description" content="Simple lists with titles and comments.">
-  <meta name="theme-color" content="#f7f8fb" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#1b1d22" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f3fcff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#172933" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="TheList">
@@ -30,7 +30,7 @@
 
   <form id="add-form" class="add-form" autocomplete="off">
     <div class="add-fields">
-      <input id="add-title" name="title" type="text" placeholder="Add an item…" required aria-label="Item title">
+      <input id="add-title" name="title" type="text" placeholder="Add an item…" required pattern=".*\S.*" aria-label="Item title">
       <input id="add-comment" name="comment" type="text" placeholder="Comment (optional)" aria-label="Item comment">
     </div>
     <button type="submit" class="primary-btn add-btn" aria-label="Add item">+</button>
@@ -60,11 +60,11 @@
     </section>
   </template>
 
-  <dialog id="list-dialog">
+  <dialog id="list-dialog" closedby="any">
     <form method="dialog" class="dialog-form">
       <h2>List options</h2>
       <label>Name
-        <input name="name" type="text" required>
+        <input name="name" type="text" required pattern=".*\S.*">
       </label>
       <label class="toggle">
         <input name="showAge" type="checkbox">
@@ -77,7 +77,7 @@
       <div class="dialog-actions">
         <button type="button" data-action="delete" class="danger-btn">Delete list</button>
         <span class="spacer"></span>
-        <button type="button" data-action="cancel">Cancel</button>
+        <button type="button" commandfor="list-dialog" command="close">Cancel</button>
         <button value="save" class="primary-btn">Save</button>
       </div>
       <small id="app-version" class="app-version"></small>

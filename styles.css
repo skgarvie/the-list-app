@@ -143,6 +143,10 @@ button { cursor: pointer; }
   outline: none;
 }
 .pages::-webkit-scrollbar { display: none; }
+/* Smooth for page switches and new items (app.js passes 'instant' for resets) */
+@media (prefers-reduced-motion: no-preference) {
+  .pages, .page { scroll-behavior: smooth; }
+}
 
 .page {
   flex: 0 0 100%;

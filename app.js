@@ -1,4 +1,4 @@
-import { loadLists, putList, deleteList, putItem, putItems, deleteItem, requestPersistence } from './db.js';
+import { loadLists, putList, deleteList, putItem, deleteItem, requestPersistence } from './db.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -38,9 +38,8 @@ async function load() {
   const lists = await loadLists();
   if (!lists.length) {
     // First run: save the starter list
-    const list = { id: uid(), name: 'My List', hue: HUES[0], order: 0, items: sampleItems(), showAge: true, fadeOld: true };
+    const list = { id: uid(), name: 'My List', hue: HUES[0], order: 0, items: [], showAge: true, fadeOld: true };
     putList(list);
-    putItems(list.id, list.items);
     return [list];
   }
   lists.forEach((list, i) => {
@@ -51,25 +50,6 @@ async function load() {
     }
   });
   return lists;
-}
-
-// TEST DATA: 30 items spread from 2 years ago to today, to preview age fading.
-// Remove this function (and its call above) to start with an empty list.
-function sampleItems() {
-  const titles = [
-    'Renew passport', 'Fix the bike light', 'Call the dentist', 'Buy picture hooks', 'Sort old photos',
-    'Return library books', 'Clean the gutters', 'Order new glasses', 'Try the ramen place', 'Back up laptop',
-    'Plant tulip bulbs', 'Frame the poster', 'Learn to make bread', 'Service the boiler', 'Donate old clothes',
-    'Replace smoke alarm battery', 'Book a haircut', 'Read "Dune"', 'Write thank-you cards', 'Descale the kettle',
-    'Pay the water bill', 'Buy birthday gift', 'Check tyre pressure', 'Water the plants', 'Pick up dry cleaning',
-    'Email the landlord', 'Charge the camera', 'Buy oat milk', 'Take out recycling', 'Call Mum',
-  ];
-  const DAY = 86400000;
-  return titles.map((title, i) => {
-    const days = Math.round(((titles.length - 1 - i) / (titles.length - 1)) * 730); // oldest first
-    const comment = i % 4 === 0 ? ['Before the trip', 'The one on the high street', 'Ask about weekends', 'Check the receipt first'][(i / 4) % 4] : '';
-    return { id: uid(), title, comment, createdAt: Date.now() - days * DAY };
-  });
 }
 
 // Prefer a hue no list is using yet; once all are taken, keep cycling
@@ -117,10 +97,19 @@ function applyListSettings(page, list) {
 const MIN_GAP = 200;
 const TOP_ITEM_VISIBLE = 0.6; // fraction of the cut-off top item left showing
 
-function fitBottomGap(page) {
+// Measures every page before writing any padding, so the browser lays out once rather than once per page
+function fitBottomGaps(pages) {
+  const gaps = pages.map(bottomGap);
+  pages.forEach((page, i) => (page.style.paddingBottom = gaps[i]));
+}
+
+const fitBottomGap = (page) => fitBottomGaps([page]);
+
+// Returns the padding to set, or '' for the CSS minimum. Read-only: positions are measured from
+// the top of the scrolled content, so the current padding doesn't affect them.
+function bottomGap(page) {
   const items = page.querySelectorAll('.item');
-  page.style.paddingBottom = '';
-  if (!items.length) return;
+  if (!items.length) return '';
   const pageTop = page.getBoundingClientRect().top - page.scrollTop;
   const pos = (el) => {
     const r = el.getBoundingClientRect();
@@ -130,15 +119,13 @@ function fitBottomGap(page) {
   const contentEnd = last.top + last.height;
   const view = page.clientHeight;
   const minTop = contentEnd + MIN_GAP - view; // where the view's top edge sits with only the minimum gap
-  if (minTop <= 0) return; // doesn't scroll, nothing hidden above
+  if (minTop <= 0) return ''; // doesn't scroll, nothing hidden above
   for (const el of items) {
     const { top, height } = pos(el);
     const cut = top + height * (1 - TOP_ITEM_VISIBLE); // view top that leaves this item partly showing
-    if (cut >= minTop) {
-      page.style.paddingBottom = `${cut - contentEnd + view}px`;
-      return;
-    }
+    if (cut >= minTop) return `${cut - contentEnd + view}px`;
   }
+  return '';
 }
 
 // "last week", "2 weeks ago", "5 months ago", "1 year ago" (items under a week old get no label)
@@ -217,8 +204,9 @@ function applyHue(hue) {
 }
 
 // Show the latest item: lists open scrolled to the bottom
+// Instant, overriding the CSS smooth scrolling: this is a reset, not a visible move
 function scrollToLatest(page) {
-  page.scrollTop = page.scrollHeight;
+  page.scrollTo({ top: page.scrollHeight, behavior: 'instant' });
 }
 
 // Reset a list as soon as it's fully out of view, so switching to it always lands on its latest item
@@ -234,17 +222,16 @@ function render() {
   scrollToPage(current, false);
   renderHeader();
   // After the header is filled in, so page heights are final
-  [...els.pages.children].forEach((page) => {
-    if (page.classList.contains('list-page')) fitBottomGap(page);
-    scrollToLatest(page);
-  });
+  fitBottomGaps([...els.pages.querySelectorAll('.list-page')]);
+  [...els.pages.children].forEach(scrollToLatest);
 }
 
 // ---- Navigation ----
 
+// 'auto' takes scroll-behavior from styles.css: smooth unless the user prefers reduced motion
 function scrollToPage(i, smooth = true) {
   i = Math.max(0, Math.min(i, state.lists.length));
-  els.pages.scrollTo({ left: i * els.pages.clientWidth, behavior: smooth ? 'smooth' : 'instant' });
+  els.pages.scrollTo({ left: i * els.pages.clientWidth, behavior: smooth ? 'auto' : 'instant' });
   if (!smooth) setCurrent(i);
 }
 
@@ -276,7 +263,7 @@ window.addEventListener('resize', () => {
     resizeQueued = false;
     els.pages.scrollTo({ left: current * els.pages.clientWidth, behavior: 'instant' });
     // Viewport height changed (rotation, on-screen keyboard), so the cut-off point moves
-    els.pages.querySelectorAll('.list-page').forEach(fitBottomGap);
+    fitBottomGaps([...els.pages.querySelectorAll('.list-page')]);
   });
 });
 
@@ -332,7 +319,7 @@ els.addForm.addEventListener('submit', (e) => {
   els.addComment.value = '';
   els.addTitle.focus();
   fitBottomGap(page);
-  page.scrollTo({ top: page.scrollHeight, behavior: 'smooth' });
+  page.scrollTo({ top: page.scrollHeight });
 });
 
 // Unfocus the bar; CSS collapses the comment field once the bar is unfocused and empty
@@ -424,8 +411,9 @@ window.addEventListener('pointermove', (e) => {
   li.style.setProperty('--swipe', Math.min(1, Math.abs(dx) / (li.offsetWidth * SWIPE_DELETE_RATIO)));
 });
 
-// While an item is selected, stop the browser from scrolling or swiping pages under the finger
-window.addEventListener('touchmove', (e) => selected && e.preventDefault(), { passive: false });
+// While an item is selected, stop the browser from scrolling or swiping pages under the finger.
+// Scoped to the pages (where items live) so the header and form keep fully passive scrolling.
+els.pages.addEventListener('touchmove', (e) => selected && e.preventDefault(), { passive: false });
 // Suppress the long-press context menu / callout on items
 els.pages.addEventListener('contextmenu', (e) => e.target.closest('.item') && e.preventDefault());
 
@@ -442,7 +430,8 @@ function endSwipe(e) {
     // Slide it the rest of the way out, then delete
     li.style.transform = `translateX(${Math.sign(dx) * window.innerWidth}px)`;
     li.classList.add('removing');
-    setTimeout(() => {
+    // Delete once the .item.removing transition in styles.css ends (immediately if there's none)
+    Promise.allSettled(li.getAnimations().map((a) => a.finished)).then(() => {
       const list = state.lists[listIndex];
       list.items = list.items.filter((it) => it.id !== li.dataset.id);
       deleteItem(li.dataset.id);
@@ -450,7 +439,7 @@ function endSwipe(e) {
       const page = li.closest('.page');
       li.remove();
       fitBottomGap(page);
-    }, 200);
+    });
   } else {
     // Not far enough: spring back and stay selected
     li.style.transform = '';
@@ -477,7 +466,9 @@ function openListDialog() {
 
 // The service worker's cache name (CACHE in sw.js) doubles as the app version. Read it from
 // sw.js itself so it shows even where no service worker runs (e.g. plain http on a LAN IP).
+// Fetched once per session; a failed fetch leaves it empty, so the next open retries.
 function showAppVersion() {
+  if (els.appVersion.textContent) return;
   fetch('sw.js')
     .then((res) => res.text())
     .then((src) => {
@@ -506,9 +497,7 @@ $('form', els.listDialog).addEventListener('submit', (e) => {
 });
 
 els.listDialog.addEventListener('click', (e) => {
-  const action = e.target.dataset?.action;
-  if (action === 'cancel') els.listDialog.close();
-  if (action === 'delete') {
+  if (e.target.dataset?.action === 'delete') {
     const list = currentList();
     if (state.lists.length > 1 && confirm(`Delete "${list.name}" and all its items?`)) {
       state.lists.splice(current, 1);
@@ -518,6 +507,7 @@ els.listDialog.addEventListener('click', (e) => {
       render();
     }
   }
+  // Backdrop tap: closedby="any" handles this natively; fallback for browsers without it
   if (e.target === els.listDialog) els.listDialog.close();
 });
 

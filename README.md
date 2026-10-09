@@ -56,7 +56,7 @@ Everything is stored in the browser's IndexedDB, in a database called `thelist` 
 
 | Store | Key | Record |
 | --- | --- | --- |
-| `lists` | `id` | `{ "id": "…", "name": "My List", "hue": 235, "showAge": false, "fadeOld": false, "order": 0 }` |
+| `lists` | `id` | `{ "id": "…", "name": "My List", "hue": 235, "showAge": true, "fadeOld": true, "order": 0 }` |
 | `items` | `id` (indexed by `listId`) | `{ "id": "…", "listId": "…", "title": "Milk", "comment": "2L", "createdAt": 1700000000000 }` |
 
 Lists are shown in `order`; items within a list by `createdAt`. [db.js](db.js) loads everything into memory at startup and saves each change as it happens.
