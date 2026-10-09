@@ -38,7 +38,7 @@ async function load() {
   const lists = await loadLists();
   if (!lists.length) {
     // First run: save the starter list
-    const list = { id: uid(), name: 'My List', hue: HUES[0], order: 0, items: sampleItems() };
+    const list = { id: uid(), name: 'My List', hue: HUES[0], order: 0, items: sampleItems(), showAge: true, fadeOld: true };
     putList(list);
     putItems(list.id, list.items);
     return [list];
@@ -90,7 +90,7 @@ function itemEl(item) {
   $('.item-title', li).textContent = item.title;
   $('.item-comment', li).textContent = item.comment;
   const added = $('.item-age', li);
-  if (item.createdAt) {
+  if (item.createdAt && Date.now() - item.createdAt >= WEEK_MS) {
     const months = ageInMonths(item.createdAt);
     if (months >= 1) li.style.setProperty('--age', months);
     added.dateTime = new Date(item.createdAt).toISOString();
@@ -141,11 +141,11 @@ function fitBottomGap(page) {
   }
 }
 
-// "today", "yesterday", "3 days ago", "2 weeks ago", "5 months ago", "1 year ago"
+// "last week", "2 weeks ago", "5 months ago", "1 year ago" (items under a week old get no label)
+const WEEK_MS = 7 * 86400000;
 const relTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
 function timeAgo(createdAt) {
   const days = Math.floor((Date.now() - createdAt) / 86400000);
-  if (days < 7) return relTime.format(-days, 'day');
   if (days < 30) return relTime.format(-Math.floor(days / 7), 'week');
   if (days < 365) return relTime.format(-Math.floor(days / 30.44), 'month');
   return relTime.format(-Math.floor(days / 365.25), 'year');
