@@ -2,6 +2,8 @@
 
 A small, installable list app built with plain HTML, CSS and JavaScript — no frameworks, no build step, no dependencies.
 
+Optimised for an iPhone 12 mini (375×812 CSS pixels) in portrait, installed to the home screen. Landscape orientation doesn't need to be supported.
+
 ## Features
 
 - Multiple named lists; swipe left/right to move between them
@@ -49,7 +51,7 @@ When you ship changes, bump the `CACHE` name in [sw.js](sw.js) (e.g. `thelist-v2
 | [db.js](db.js) | IndexedDB persistence and migration from `localStorage` |
 | [sw.js](sw.js) | Cache-first service worker for offline use |
 | [manifest.webmanifest](manifest.webmanifest) | PWA install metadata |
-| [icons/](icons/) | App icons (SVG, 192/512 PNG, maskable) |
+| [icons/](icons/) | App icons (SVG, 192/512 PNG, maskable, 180px apple-touch-icon) and iPhone 12 mini launch screens (light/dark) |
 
 ## Data
 

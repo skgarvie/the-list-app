@@ -2,17 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <title>TheList</title>
   <meta name="description" content="Simple lists with titles and comments.">
   <meta name="theme-color" content="#f3fcff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#172933" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TheList">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <!-- Launch screens for the iPhone 12 mini (375×812 @3x), portrait only -->
+  <link rel="apple-touch-startup-image" href="icons/splash-light.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: light)">
+  <link rel="apple-touch-startup-image" href="icons/splash-dark.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: dark)">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -36,8 +39,8 @@
 
   <form id="add-form" class="add-form" autocomplete="off">
     <div class="add-fields">
-      <input id="add-title" name="title" type="text" placeholder="Add an item…" required pattern=".*\S.*" aria-label="Item title">
-      <input id="add-comment" name="comment" type="text" placeholder="Comment (optional)" aria-label="Item comment">
+      <input id="add-title" name="title" type="text" placeholder="Add an item…" enterkeyhint="done" autocapitalize="sentences" required pattern=".*\S.*" aria-label="Item title">
+      <input id="add-comment" name="comment" type="text" placeholder="Comment (optional)" enterkeyhint="done" autocapitalize="sentences" aria-label="Item comment">
     </div>
     <button type="submit" class="primary-btn add-btn" aria-label="Add item">+</button>
   </form>
@@ -85,7 +88,7 @@
     <form method="dialog" class="dialog-form">
       <h2>List options</h2>
       <label>Name
-        <input name="name" type="text" required pattern=".*\S.*">
+        <input name="name" type="text" enterkeyhint="done" autocapitalize="words" required pattern=".*\S.*">
       </label>
       <label class="toggle">
         <input name="showAge" type="checkbox">
