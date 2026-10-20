@@ -201,9 +201,9 @@ function setTone(el, hue) {
 function applyHue(hue) {
   setTone(document.documentElement, hue);
   if (els.newListPage) setTone(els.newListPage, hue);
-  // Match the header's --surface in each scheme
-  els.themeLight.content = `oklch(98.5% 0.012 ${hue})`;
-  els.themeDark.content = `oklch(27% 0.03 ${hue})`;
+  // Match the header's background (--accent at 70% chroma) in each scheme
+  els.themeLight.content = `oklch(82% 0.0595 ${hue})`;
+  els.themeDark.content = `oklch(84% 0.056 ${hue})`;
 }
 
 // Show the latest item: lists open scrolled to the bottom

@@ -71,9 +71,12 @@
   </template>
 
   <dialog id="overview-dialog" class="overview" closedby="any" aria-label="All lists">
-    <header class="overview-header">
-      <h2>Lists</h2>
+    <header class="app-header overview-header">
       <button type="button" class="icon-btn" commandfor="overview-dialog" command="close" aria-label="Close">&times;</button>
+      <div class="header-center">
+        <h2 class="list-title">Lists</h2>
+      </div>
+      <span class="icon-btn" aria-hidden="true"></span>
     </header>
     <ul id="overview-grid" class="overview-grid"></ul>
   </dialog>

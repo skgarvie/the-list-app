@@ -32,6 +32,28 @@
   }
 }
 
+/* Bars and items take the tile colours: a pastel --accent fill in both schemes, so the
+   tokens drawn on top of it are re-derived from --accent/--accent-text here */
+.app-header, .add-form, .item {
+  --surface: var(--accent);
+  --text: var(--accent-text);
+  --muted: color-mix(in oklch, var(--accent-text) 75%, var(--accent));
+  --border: color-mix(in oklch, var(--accent), var(--accent-text) 15%);
+  --bg: color-mix(in oklch, var(--accent), white 55%); /* fields and hover states */
+  --dot: color-mix(in oklch, var(--accent), var(--accent-text) 30%);
+  --accent-strong: var(--accent-text);
+  color: var(--text);
+  color-scheme: light;
+}
+/* Bars sit a touch quieter than the items: 30% less chroma */
+.app-header, .add-form { --surface: oklch(from var(--accent) l calc(c * 0.7) h); }
+/* The add button would vanish into its bar, so invert it */
+.add-form .primary-btn {
+  background: var(--accent-text);
+  border-color: var(--accent-text);
+  color: var(--accent);
+}
+
 * { box-sizing: border-box; }
 
 html, body {
@@ -407,22 +429,22 @@ dialog::backdrop { background: rgb(0 0 0 / 0.4); }
   margin: 0;
   border: 0;
   border-radius: 0;
-  padding: env(safe-area-inset-top) max(16px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(16px, env(safe-area-inset-left));
+  padding: 0;
   background: var(--bg);
   overflow-y: auto;
 }
+/* Reuses .app-header; stays pinned while the grid scrolls */
 .overview-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
-.overview-header h2 { margin: 0; font-size: 1.15rem; }
+.overview-header .list-title { margin: 0; }
 
 .overview-grid {
   list-style: none;
   margin: 0;
-  padding: 12px 0 24px;
+  padding: 16px max(16px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 24px) max(16px, env(safe-area-inset-left));
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
