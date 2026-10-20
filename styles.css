@@ -75,7 +75,8 @@ html, body { overscroll-behavior: none; }
 body {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  /* --vvh is the visual viewport's height, set by app.js so the keyboard shrinks the layout on iOS */
+  height: var(--vvh, 100dvh);
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
@@ -102,6 +103,10 @@ button, input, .item, .tile { touch-action: manipulation; }
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   transition: background-color 0.3s, border-color 0.3s;
+  /* Sticky (a no-op in this layout) so iOS Safari tints the status bar with the header's colour:
+     it samples a fixed or sticky element at the top, else falls back to the page background */
+  position: sticky;
+  top: 0;
   /* Long-pressing the title or dots shouldn't select text or bring up the magnifier */
   user-select: none;
   -webkit-user-select: none;
@@ -401,9 +406,19 @@ textarea { resize: vertical; }
   flex: none;
   padding: 0;
   border-radius: 50%;
-  font-size: 1.5rem;
   -webkit-user-select: none;
   user-select: none;
+}
+/* Drawn rather than a "+" glyph, whose font metrics sit it off-centre in the circle */
+.add-btn svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
 }
 
 /* Dialogs */
@@ -488,6 +503,8 @@ dialog::backdrop { background: rgb(0 0 0 / 0.4); }
   z-index: 1;
 }
 .overview-header .list-title { margin: 0; }
+/* Focused on open (autofocus) so the close button isn't, but there's nothing to act on */
+.overview-header .list-title:focus { outline: none; }
 
 .overview-grid {
   list-style: none;

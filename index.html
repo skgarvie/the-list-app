@@ -42,7 +42,9 @@
       <input id="add-title" name="title" type="text" placeholder="Add an item…" enterkeyhint="done" autocapitalize="sentences" required pattern=".*\S.*" aria-label="Item title">
       <input id="add-comment" name="comment" type="text" placeholder="Comment (optional)" enterkeyhint="done" autocapitalize="sentences" aria-label="Item comment">
     </div>
-    <button type="submit" class="primary-btn add-btn" aria-label="Add item">+</button>
+    <button type="submit" class="primary-btn add-btn" aria-label="Add item">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
   </form>
 
   <div id="select-scrim" class="select-scrim">
@@ -77,7 +79,7 @@
     <header class="app-header overview-header">
       <button type="button" class="icon-btn" commandfor="overview-dialog" command="close" aria-label="Close">&times;</button>
       <div class="header-center">
-        <h2 class="list-title">Lists</h2>
+        <h2 class="list-title" tabindex="-1" autofocus>Lists</h2>
       </div>
       <span class="icon-btn" aria-hidden="true"></span>
     </header>
