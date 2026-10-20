@@ -1,6 +1,6 @@
 /* Pastel palette: every colour derives from --hue (set per list by app.js).
-   Tokens are declared on .page too so each page resolves its own list's hue. */
-:root, .page {
+   Tokens are declared on .page and .tile too so each resolves its own list's hue. */
+:root, .page, .tile {
   --hue: 235;
   --bg: oklch(94% 0.04 var(--hue));
   --surface: oklch(98.5% 0.012 var(--hue));
@@ -17,7 +17,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root, .page {
+  :root, .page, .tile {
     --bg: oklch(22% 0.025 var(--hue));
     --surface: oklch(27% 0.03 var(--hue));
     --text: oklch(95% 0.015 var(--hue));
@@ -104,6 +104,12 @@ button { cursor: pointer; }
 }
 .icon-btn:hover:not(:disabled) { background: var(--bg); }
 .icon-btn:disabled { visibility: hidden; }
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+  vertical-align: middle;
+  fill: currentColor;
+}
 
 .dots {
   display: flex;
@@ -392,9 +398,68 @@ dialog::backdrop { background: rgb(0 0 0 / 0.4); }
 .app-version:empty { display: none; }
 .danger-btn:disabled { visibility: hidden; }
 
+/* Overview: full-screen grid of list tiles */
+.overview {
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: env(safe-area-inset-top) max(16px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(16px, env(safe-area-inset-left));
+  background: var(--bg);
+  overflow-y: auto;
+}
+.overview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+}
+.overview-header h2 { margin: 0; font-size: 1.15rem; }
+
+.overview-grid {
+  list-style: none;
+  margin: 0;
+  padding: 12px 0 24px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (min-width: 600px) {
+  .overview-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
+
+.tile {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 14px;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 650;
+  text-align: left;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+/* Ring outside the tile so it reads against the page in both schemes */
+.tile[aria-current="true"] { outline: 3px solid var(--accent-strong); outline-offset: 3px; }
+.tile-count { font-size: 0.8rem; font-weight: 500; opacity: 0.75; }
+.tile.new {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: none;
+  color: var(--muted);
+  border: 2px dashed var(--border);
+}
 @media (hover: none) {
   .nav-btn { visibility: hidden; }
 }
-
-/* Balance the header: prev on the left mirrors next + menu on the right */
-#prev-btn { margin-right: 40px; }

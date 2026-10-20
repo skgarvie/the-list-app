@@ -14,6 +14,9 @@ const els = {
   addComment: $('#add-comment'),
   selectScrim: $('#select-scrim'),
   listDialog: $('#list-dialog'),
+  overview: $('#overview-dialog'),
+  overviewGrid: $('#overview-grid'),
+  overviewTileTpl: $('#overview-tile-tpl'),
   appVersion: $('#app-version'),
   listPageTpl: $('#list-page-tpl'),
   newListTpl: $('#new-list-tpl'),
@@ -274,6 +277,49 @@ els.pages.addEventListener('keydown', (e) => {
   if (e.target !== els.pages) return;
   if (e.key === 'ArrowLeft') scrollToPage(current - 1);
   if (e.key === 'ArrowRight') scrollToPage(current + 1);
+});
+
+// ---- Overview: every list as a coloured tile; tap one to jump to it ----
+
+const plural = new Intl.PluralRules();
+const countLabel = (n) => `${n} ${plural.select(n) === 'one' ? 'item' : 'items'}`;
+
+function overviewTile(name, hue, index) {
+  const li = els.overviewTileTpl.content.firstElementChild.cloneNode(true);
+  const tile = $('.tile', li);
+  setTone(tile, hue);
+  tile.dataset.index = index;
+  tile.setAttribute('aria-current', index === current);
+  $('.tile-name', li).textContent = name;
+  return li;
+}
+
+// Rebuilt on every open, so names, counts and order are always current
+function renderOverview() {
+  const tiles = state.lists.map((list, i) => {
+    const li = overviewTile(list.name, list.hue, i);
+    $('.tile-count', li).textContent = countLabel(list.items.length);
+    return li;
+  });
+  // Last tile goes to the "new list" page, in the hue the next list will get
+  const add = overviewTile('+ New list', nextHue(), state.lists.length);
+  $('.tile', add).classList.add('new');
+  $('.tile-count', add).remove();
+  tiles.push(add);
+  els.overviewGrid.replaceChildren(...tiles);
+}
+
+// The command event fires on the dialog before the button's show-modal runs
+els.overview.addEventListener('command', (e) => e.command === 'show-modal' && renderOverview());
+
+els.overviewGrid.addEventListener('click', (e) => {
+  const tile = e.target.closest('.tile');
+  if (!tile) return;
+  dismissForm();
+  // Instant: a smooth scroll would sweep past every list in between
+  scrollToPage(Number(tile.dataset.index), false);
+  els.overview.close();
+  if (isNewListPage()) els.addTitle.focus();
 });
 
 // ---- Bottom bar: adds an item, or names a new list on the "+ New list" page ----

@@ -17,6 +17,12 @@
 </head>
 <body>
   <header class="app-header">
+    <button id="overview-btn" class="icon-btn" aria-label="All lists" commandfor="overview-dialog" command="show-modal">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/>
+        <rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>
+      </svg>
+    </button>
     <button id="prev-btn" class="icon-btn nav-btn" aria-label="Previous list">&#8249;</button>
     <div class="header-center">
       <button id="list-title" class="list-title" aria-label="Rename list"></button>
@@ -59,6 +65,18 @@
       </div>
     </section>
   </template>
+
+  <template id="overview-tile-tpl">
+    <li><button type="button" class="tile"><span class="tile-name"></span><span class="tile-count"></span></button></li>
+  </template>
+
+  <dialog id="overview-dialog" class="overview" closedby="any" aria-label="All lists">
+    <header class="overview-header">
+      <h2>Lists</h2>
+      <button type="button" class="icon-btn" commandfor="overview-dialog" command="close" aria-label="Close">&times;</button>
+    </header>
+    <ul id="overview-grid" class="overview-grid"></ul>
+  </dialog>
 
   <dialog id="list-dialog" closedby="any">
     <form method="dialog" class="dialog-form">

@@ -10,6 +10,7 @@ A small, installable list app built with plain HTML, CSS and JavaScript — no f
 - Press and hold an item to select it, then swipe it left or right to delete it; tap anywhere else to cancel
 - Tap the list name (or ⋮) to rename or delete a list, or to turn on per-list settings: show when items were added, and fade older items (both off by default)
 - Swipe past the last list, then name the new list in the bottom bar to create it
+- Tap the grid button (top left) to see every list as a coloured tile with its item count, and tap one to jump to it (or "+ New list" to start one)
 - Works offline and can be installed to the home screen
 - Each list gets its own colour from a pastel palette
 - Follows the system light/dark setting
@@ -22,7 +23,7 @@ Serve the folder over HTTP (service workers don't run from `file://`):
 python3 -m http.server 8000
 ```
 
-Then open <http://localhost:8000>. On desktop, use the ‹ › buttons, the dots, or the arrow keys to switch lists.
+Then open <http://localhost:8000>. On desktop, use the ‹ › buttons, the dots, the grid button, or the arrow keys to switch lists.
 
 To stop the server, press `Ctrl+C` in the terminal where it's running. If it was started in the background or from another terminal, find and stop it by port:
 
