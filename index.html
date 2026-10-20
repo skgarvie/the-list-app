@@ -87,10 +87,13 @@
   </dialog>
 
   <dialog id="list-dialog" closedby="any">
-    <form method="dialog" class="dialog-form">
-      <h2>List options</h2>
+    <form method="dialog" class="dialog-form" autocomplete="off">
+      <div class="dialog-header">
+        <h2>List options</h2>
+        <button value="save" class="primary-btn">Save</button>
+      </div>
       <label>Name
-        <input name="name" type="text" enterkeyhint="done" autocapitalize="words" required pattern=".*\S.*">
+        <input name="listName" type="text" enterkeyhint="done" autocapitalize="words" required pattern=".*\S.*">
       </label>
       <label class="toggle">
         <input name="showAge" type="checkbox">
@@ -104,7 +107,6 @@
         <button type="button" data-action="delete" class="danger-btn">Delete list</button>
         <span class="spacer"></span>
         <button type="button" commandfor="list-dialog" command="close">Cancel</button>
-        <button value="save" class="primary-btn">Save</button>
       </div>
       <small id="app-version" class="app-version"></small>
     </form>

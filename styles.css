@@ -75,8 +75,7 @@ html, body { overscroll-behavior: none; }
 body {
   display: flex;
   flex-direction: column;
-  /* --vvh is the visual viewport's height, set by app.js so the keyboard shrinks the layout on iOS */
-  height: var(--vvh, 100dvh);
+  height: 100dvh;
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
@@ -441,6 +440,13 @@ dialog::backdrop { background: rgb(0 0 0 / 0.4); }
   flex-direction: column;
   gap: 12px;
   padding: 20px;
+}
+/* Title on the left, Save on the right: the dialog's main action stays in reach above the keyboard */
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 .dialog-form h2 { margin: 0; font-size: 1.1rem; }
 .dialog-form label {

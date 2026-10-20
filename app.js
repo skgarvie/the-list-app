@@ -256,43 +256,18 @@ els.pages.addEventListener(
   { passive: true }
 );
 
-// iOS doesn't shrink the layout viewport (or 100dvh) for the on-screen keyboard: it scrolls the page
-// to keep the focused field in view, pushing the header off screen. So fit the body to the visual
-// viewport instead (--vvh in styles.css) and undo that scroll.
-const vv = window.visualViewport;
-// Pinch zoom shrinks the visual viewport too; leave the layout at 100dvh then
-const unzoomed = () => Math.abs(vv.scale - 1) < 0.01;
-
-function fitToVisualViewport() {
-  if (!vv) return;
-  if (!unzoomed()) return document.documentElement.style.removeProperty('--vvh');
-  document.documentElement.style.setProperty('--vvh', `${vv.height}px`);
-  window.scrollTo(0, 0);
-}
-
-// Keep the layout fitted when the viewport resizes (on-screen keyboard, etc.)
-// Resize fires in bursts (e.g. while the on-screen keyboard animates); handle once per frame
+// Viewport height changed (desktop window, Android keyboard; iOS fires neither for its keyboard),
+// so the cut-off point moves. Scroll-snap keeps the current page aligned by itself.
+// Resize fires in bursts; handle once per frame
 let resizeQueued = false;
-function onViewportResize() {
+window.addEventListener('resize', () => {
   if (resizeQueued) return;
   resizeQueued = true;
   requestAnimationFrame(() => {
     resizeQueued = false;
-    // Measured before the body resizes: a list showing its latest item should keep showing it
-    const page = els.pages.children[current];
-    const atLatest = page.scrollHeight - page.scrollTop - page.clientHeight < 2;
-    fitToVisualViewport();
-    els.pages.scrollTo({ left: current * els.pages.clientWidth, behavior: 'instant' });
-    // Viewport height changed, so the cut-off point moves
     fitBottomGaps([...els.pages.querySelectorAll('.list-page')]);
-    if (atLatest) scrollToLatest(page);
   });
-}
-
-window.addEventListener('resize', onViewportResize);
-vv?.addEventListener('resize', onViewportResize);
-// iOS may still pan the page while the keyboard animates in; pin it back to the top
-vv?.addEventListener('scroll', () => unzoomed() && vv.offsetTop && window.scrollTo(0, 0));
+});
 
 els.prev.addEventListener('click', () => scrollToPage(current - 1));
 els.next.addEventListener('click', () => scrollToPage(current + 1));
@@ -525,7 +500,7 @@ window.addEventListener('pointercancel', endSwipe);
 function openListDialog() {
   if (isNewListPage()) return;
   const form = $('form', els.listDialog);
-  form.name.value = currentList().name;
+  form.listName.value = currentList().name;
   form.showAge.checked = !!currentList().showAge;
   form.fadeOld.checked = !!currentList().fadeOld;
   $('[data-action="delete"]', els.listDialog).disabled = state.lists.length <= 1;
@@ -552,7 +527,7 @@ els.menu.addEventListener('click', openListDialog);
 
 $('form', els.listDialog).addEventListener('submit', (e) => {
   if (isNewListPage()) return;
-  const name = e.target.name.value.trim();
+  const name = e.target.listName.value.trim();
   if (!name) return;
   const list = currentList();
   Object.assign(list, {
