@@ -317,7 +317,7 @@ els.addForm.addEventListener('submit', (e) => {
   $('.items', page).append(itemEl(item));
   els.addTitle.value = '';
   els.addComment.value = '';
-  els.addTitle.focus();
+  dismissForm();
   fitBottomGap(page);
   page.scrollTo({ top: page.scrollHeight });
 });
